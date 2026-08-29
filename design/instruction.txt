@@ -1,0 +1,163 @@
+Gemini AI Prompt & Output Specifications
+A. Career Path Recommendation Prompt Template
+SYSTEM: You are the FWD Career Intelligence Engine for University Students.
+INPUT CONTEXT: 
+- Student Academic Major: {{major}} (CGPA: {{cgpa}}, Semester: {{semester}})
+- Core Skills & Languages: {{skills}}, {{programmingLanguages}}
+- Completed Projects: {{projects}}
+- Stated Career Goals: {{careerGoals}}
+- Aptitude Performance Tier: {{aptitudeTier}}
+
+TASK:
+Generate the Top 5 recommended career matches with strictly transparent rationale.
+Return valid JSON adhering to the CareerRecommendation schema.
+B. ATS Resume Audit Prompt Template
+SYSTEM: You are an Enterprise Senior Recruiter and ATS Parser.
+INPUT CONTEXT:
+- Target Role: {{targetRole}}
+- Raw Resume Content: {{resumeText}}
+
+TASK:
+Analyze the resume for ATS compatibility, calculate overall scores (0-100), extract missing industry keywords, and rewrite up to 3 project bullets into high-impact, quantified STAR-formatted statements.
+Return valid JSON adhering to the ResumeAnalysisResult schema.
+4. Directory & Codebase File Structure
+├── src/
+│   ├── components/
+│   │   ├── Navbar.tsx                   # Main floating dock & FWD lucky charm logo
+│   │   ├── AuthModal.tsx                # Firebase auth modal with demo mode
+│   │   ├── ProfileBuilder.tsx           # Academic & technical intake matrix
+│   │   ├── DiagnosticAssessment.tsx     # 5-min aptitude & skill level calibration
+│   │   ├── CareerRecommendations.tsx    # Top-5 transparent AI matches
+│   │   ├── CareerExplorer.tsx           # Deep-dive tech directory with OER links
+│   │   ├── SkillGapAnalysis.tsx         # Competency delta & bridge projects
+│   │   ├── RoadmapView.tsx              # Tiered milestone & weekly checklist
+│   │   ├── ResumeAnalyzer.tsx           # Client PDF extraction & ATS audit
+│   │   ├── InterviewPrep.tsx            # Multi-track AI interview simulator
+│   │   ├── JobMarketDashboard.tsx       # Live hiring charts & direct apply gate
+│   │   ├── WorkloadMonitor.tsx          # Fatigue detection & pacing controller
+│   │   ├── FacultyDashboard.tsx         # Institutional mentor & approval portal
+│   │   ├── AdvisorChat.tsx              # 24/7 persistent Gemini mentor chat
+│   │   └── SavedCareersView.tsx         # Cloud-synced bookmarks
+│   ├── data/
+│   │   ├── careerExplorerData.ts        # Seed OER links & role specs
+│   │   ├── jobMarketData.ts             # Hiring demand & salary benchmarks
+│   │   ├── sampleProfiles.ts            # Auto-fill student presets
+│   │   └── facultyData.ts               # Institutional mentee seed records
+│   ├── lib/
+│   │   ├── firebase.ts                  # Firebase auth & firestore init
+│   │   └── gemini.ts                    # Gemini AI API SDK configuration
+│   ├── types.ts                         # Complete TypeScript interfaces
+│   ├── App.tsx                          # Root state orchestrator & tabs
+│   ├── index.css                        # Tailwind directives & glassmorphism
+│   └── main.tsx                         # DOM entry point
+├── public/
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── tailwind.config.js
+
+---
+
+# File 3: `DESIGN.md` (UI/UX Design System & Screen Specifications)
+
+```markdown
+# UI/UX Design System & Layout Specifications
+
+## 1. Brand Identity & The FWD "Lucky Charm" Logo
+
+### The Logo Glyph Component
+The **FWD** logo combines a 4-leaf lucky clover charm with fast-forward chevrons (`>>`), representing progress, resilience, and good fortune in career growth.
+
+```tsx
+export const FWDLogo: React.FC<{ size?: 'sm' | 'md' | 'lg' }> = ({ size = 'md' }) => {
+  const dimension = size === 'sm' ? 'w-8 h-8' : size === 'lg' ? 'w-14 h-14' : 'w-10 h-10';
+  return (
+    <div className="flex items-center gap-2.5 group cursor-pointer">
+      <div className={`relative ${dimension} rounded-2xl bg-gradient-to-tr from-[#F14938] via-[#A855F7] to-[#10B981] p-0.5 shadow-violet-glow group-hover:scale-105 transition-transform`}>
+        <div className="w-full h-full bg-[#1E1738] rounded-[14px] flex items-center justify-center relative overflow-hidden">
+          {/* 4-Leaf Lucky Charm Fast-Forward SVG */}
+          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 19l6-7-6-7" />
+            <path d="M6 19l6-7-6-7" />
+            <circle cx="12" cy="12" r="2" fill="#10B981" />
+          </svg>
+        </div>
+      </div>
+      <div className="flex flex-col">
+        <span className="font-black text-2xl tracking-tighter text-white leading-none">
+          FWD<span className="text-[#F14938]">.</span>
+        </span>
+        <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#D4CDE6]">
+          Skills & Career
+        </span>
+      </div>
+    </div>
+  );
+};
+2. Design Philosophy & Visual Aesthetic
+Theme: Vibrant Neo-Glassmorphism with deep purple-to-magenta ambient mesh gradient.
+
+Visual Metaphor: "The Student Pro Card" — Treats each student as a high-performing talent building career stats, tracking placement metrics, and advancing tiers through clean data cards.
+
+Key UI Signatures:
+
+Dynamic Visuals: Left-aligned persona visual with tier numbers.
+
+Floating Frosted Glassmorphism: Translucent slate/purple panels with soft blur (backdrop-blur-2xl), rounded contours (rounded-4xl), and subtle 1px border glows.
+
+Tri-Color KPI Pill Badges: Bold high-contrast metric boxes (Coral Red, Deep Blue, Pure White) for immediate visual hierarchy.
+
+Central Fluid/Organic Radar: Fluid concentric competency radar mapping aptitude, technical depth, and soft skills.
+
+Clean Capsule Floating Navigation: Centered top pill dock with minimalist micro-icons.
+
+3. Color Palette & Token System
+CSS
+:root {
+  /* Ambient Mesh Gradients */
+  --bg-mesh-dark: #1E1738;
+  --bg-mesh-primary: #3B1E6D;
+  --bg-mesh-accent: #782167;
+  --bg-mesh-glow: #9D256D;
+
+  /* Glass Surface Tokens */
+  --glass-surface: rgba(30, 23, 56, 0.65);
+  --glass-surface-subtle: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-border-focus: rgba(192, 132, 252, 0.45);
+
+  /* High-Contrast KPI Stat Blocks */
+  --kpi-coral: #F14938;      /* Primary Key Metric (e.g. Placement Readiness) */
+  --kpi-navy: #1F3668;       /* Secondary Metric (e.g. Milestones Cleared) */
+  --kpi-light: #FFFFFF;      /* Highlight White Pill */
+  --kpi-purple: #4D3380;     /* Metadata / Bio Cards */
+
+  /* Text & Accents */
+  --text-primary: #FFFFFF;
+  --text-secondary: #D4CDE6;
+  --text-muted: #8E82A8;
+  --accent-coral: #FF5A43;
+  --accent-mint: #10B981;
+  --accent-violet: #A855F7;
+}
+4. Key Screen Layouts & Wireframe Specs
+Screen 1: Dashboard (App.tsx)
+Player-card hero matrix with central fluid radar, tri-color stat pills, and recent test logs.
+
+Screen 2: Diagnostic Arena (DiagnosticAssessment.tsx)
+Timed test interface with progress countdown and instant tier score cards.
+
+Screen 3: Tiered Roadmap (RoadmapView.tsx)
+Translucent milestone cards with NPTEL/YouTube pill tags and checkpoint triggers.
+
+Screen 4: Live Job Radar (JobMarketDashboard.tsx)
+Multi-axis area charts and radar metrics on deep purple glassmorphism panels.
+
+Screen 5: ATS Resume Audit (ResumeAnalyzer.tsx)
+Circular score gauges, keyword copy pills, and side-by-side bullet rewrites.
+
+Screen 6: Faculty Hub (FacultyDashboard.tsx)
+Mentee stat grid with endorsement workflows and star ratings.
+
+Screen 7: Workload Monitor (WorkloadMonitor.tsx)
+Fatigue gauge with pacing adjustments and positive reinforcement toasts.
