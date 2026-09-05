@@ -18,7 +18,13 @@ import {
   CheckCircle,
   Menu,
   X,
-  Search
+  Search,
+  Globe,
+  Heart,
+  Flame,
+  Award,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 import { FWDLogo } from './FWDLogo';
 import { useTheme, THEME_CONFIGS } from '../context/ThemeContext';
@@ -29,8 +35,11 @@ import { getGeminiApiKey } from '../lib/gemini';
 
 export type ActiveTab = 
   | 'dashboard'
+  | 'intake'
   | 'diagnostic'
   | 'recommendations'
+  | 'presence'
+  | 'wellbeing'
   | 'explorer'
   | 'skillgap'
   | 'roadmap'
@@ -47,6 +56,7 @@ interface NavbarProps {
   onOpenApiKeyModal: () => void;
   onOpenProfileBuilder: () => void;
   onOpenSearch: () => void;
+  onOpenAvatarModal?: () => void;
 }
 
 interface NavItem {
@@ -54,6 +64,7 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  badgeColor?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -62,9 +73,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenApiKeyModal,
   onOpenProfileBuilder,
   onOpenSearch,
+  onOpenAvatarModal,
 }) => {
   const { currentTheme, setTheme, isAudioMuted, toggleAudio, customValues, updateCustomTheme } = useTheme();
-  const { role, setRole, student, switchDemoStudent } = useAuth();
+  const { role, setRole, student, presence, wellbeing, avatar, switchDemoStudent } = useAuth();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -79,9 +91,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Pro Card', icon: Target },
-    { id: 'diagnostic', label: 'Diagnostic', icon: Sparkles, badge: '5-Min' },
+    { id: 'intake', label: 'Intake Hub', icon: Zap, badge: '3-Track' },
     { id: 'recommendations', label: 'AI Matches', icon: Compass },
+    { id: 'presence', label: 'Career Presence', icon: Globe, badge: `${presence.overallScore}%` },
+    { id: 'wellbeing', label: 'Wellbeing', icon: Heart, badge: `${wellbeing.currentStreak}🔥` },
     { id: 'roadmap', label: 'Roadmap', icon: Layers, badge: `${student.readinessScore}%` },
+    { id: 'diagnostic', label: 'Diagnostic', icon: Sparkles, badge: '5-Min' },
     { id: 'skillgap', label: 'Skill Gap', icon: CheckCircle },
     { id: 'explorer', label: 'OER Explorer', icon: BookOpen },
     { id: 'resume', label: 'ATS Auditor', icon: FileText },
@@ -96,7 +111,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <nav className="relative flex items-center justify-between px-3.5 py-2.5 rounded-3xl bg-[var(--theme-surface)]/90 backdrop-blur-2xl border border-white/10 shadow-glass transition-all duration-300">
         
         {/* Brand Logo */}
-        <div onClick={() => handleTabClick('dashboard')} className="flex-shrink-0">
+        <div onClick={() => handleTabClick('dashboard')} className="flex-shrink-0 cursor-pointer">
           <FWDLogo size="md" />
         </div>
 
@@ -129,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </div>
 
-        {/* Action Controls (Search, Theme, Sound, API Key, User Avatar) */}
+        {/* Action Controls (Search, Sound, Quick Mood, API Key, Theme, User Avatar) */}
         <div className="flex items-center gap-2">
           
           {/* Quick Search Button */}
@@ -144,6 +159,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Search className="w-3.5 h-3.5 text-purple-300" />
             <span className="hidden sm:inline text-[11px] text-white/60">Search</span>
             <kbd className="hidden sm:inline px-1 py-0.5 text-[9px] bg-black/40 rounded text-white/40 border border-white/10">⌘K</kbd>
+          </button>
+
+          {/* Quick 5-Second Wellbeing Trigger */}
+          <button
+            onClick={() => {
+              handleTabClick('wellbeing');
+            }}
+            className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+              activeTab === 'wellbeing'
+                ? 'bg-pink-600/30 border-pink-500/40 text-pink-200 shadow-glow'
+                : 'bg-white/5 border-white/10 text-pink-300 hover:bg-white/10'
+            }`}
+            title="5-Second Daily Energy & Mood Check"
+          >
+            <Heart className="w-3.5 h-3.5 text-pink-400 fill-pink-400/30" />
+            <span className="text-[11px] font-mono">{wellbeing.currentStreak}d</span>
           </button>
 
           {/* Sound Toggle */}
@@ -174,7 +205,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Key className="w-3.5 h-3.5" />
             <span className="hidden md:inline font-mono text-[10px]">
-              {hasApiKey ? 'Gemini Live' : 'AI Config'}
+              {hasApiKey ? 'Gemini 2.5' : 'AI Config'}
             </span>
             <span className={`w-1.5 h-1.5 rounded-full ${hasApiKey ? 'bg-emerald-400' : 'bg-amber-400'}`} />
           </button>
@@ -279,18 +310,30 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="text-[9px] text-purple-300 font-medium capitalize">{role}</span>
               </div>
               <img
-                src={student.avatarUrl}
+                src={avatar.imageUrl || student.avatarUrl}
                 alt={student.displayName}
                 className="w-7 h-7 rounded-xl object-cover border border-purple-400/40"
               />
             </button>
 
             {showRoleMenu && (
-              <div className="absolute right-0 mt-2 w-64 p-3 rounded-2xl bg-[#140E24]/95 backdrop-blur-2xl border border-white/10 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="pb-2 mb-2 border-b border-white/10">
-                  <div className="text-xs font-bold text-white">{student.displayName}</div>
-                  <div className="text-[10px] text-[#D4CDE6]/70 truncate">{student.email}</div>
-                  <div className="text-[9px] font-mono text-emerald-400 mt-0.5">CGPA {student.cgpa} • {student.major}</div>
+              <div className="absolute right-0 mt-2 w-72 p-3 rounded-2xl bg-[#140E24]/95 backdrop-blur-2xl border border-white/10 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="pb-2 mb-2 border-b border-white/10 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-white">{student.displayName}</div>
+                    <div className="text-[10px] text-[#D4CDE6]/70 truncate">{student.email}</div>
+                    <div className="text-[9px] font-mono text-emerald-400 mt-0.5">CGPA {student.cgpa} • {student.major}</div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (onOpenAvatarModal) onOpenAvatarModal();
+                      setShowRoleMenu(false);
+                    }}
+                    className="p-1.5 rounded-xl bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 text-[10px] font-bold uppercase"
+                    title="Change Celebratory Tier Avatar"
+                  >
+                    🎭 {avatar.unlockedTier}
+                  </button>
                 </div>
 
                 <div className="space-y-1 text-xs">
@@ -306,7 +349,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </button>
 
                   <div className="pt-2 border-t border-white/5">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-white/50 px-1">Switch Demo Profile</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-white/50 px-1">Switch Multi-Persona Demo</span>
                     <button
                       onClick={() => {
                         switchDemoStudent(0);
@@ -326,6 +369,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <span>Priya Patel (ML Research)</span>
                       <span className="text-[9px] text-purple-300">IIT Bombay</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        switchDemoStudent(2);
+                        setShowRoleMenu(false);
+                      }}
+                      className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-xl text-left hover:bg-white/10 text-white text-[11px]"
+                    >
+                      <span>Ananya Rao (Product & UX Explorer)</span>
+                      <span className="text-[9px] text-purple-300">PES Univ</span>
                     </button>
                   </div>
 

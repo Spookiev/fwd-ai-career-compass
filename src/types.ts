@@ -279,3 +279,185 @@ export interface ThemeConfig {
   glow: string;
   particleType: 'sparks' | 'matrix' | 'bubbles' | 'leaves' | 'steam' | 'stars' | 'custom';
 }
+
+// ==========================================
+// FWD 2.0 DATA ARCHITECTURE & FIRESTORE TYPES
+// ==========================================
+
+export type AvatarCategory = 'animals' | 'robots' | 'fantasy' | 'anime' | 'professional' | 'minimalist';
+export type AvatarTier = 'foundation' | 'associate' | 'advanced';
+
+export interface AvatarIdentity {
+  id: string;
+  name: string;
+  category: AvatarCategory;
+  unlockedTier: AvatarTier;
+  imageUrl: string;
+  description: string;
+}
+
+export interface UserDocument {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: 'student' | 'faculty';
+  avatar: {
+    id: string;
+    category: AvatarCategory;
+    unlockedTier: AvatarTier;
+  };
+  createdAt: string;
+}
+
+export interface EvidenceDocument {
+  userId: string;
+  // Professional
+  resume?: {
+    uploadedAt: string;
+    rawText: string;
+    extractedSkills: string[];
+    extractedExperienceYears: number;
+    extractedProjects: Array<{ title: string; tech: string[]; description: string }>;
+  };
+  linkedInUrl?: string;
+  portfolioUrl?: string;
+  // Technical Evidence
+  github?: {
+    username: string;
+    connected: boolean;
+    repoCount: number;
+    topLanguages: Record<string, number>; // e.g. { TypeScript: 60, Python: 40 }
+    totalStars: number;
+    activityScore: number;
+  };
+  leetcode?: {
+    username: string;
+    connected: boolean;
+    problemsSolved: { easy: number; medium: number; hard: number };
+    contestRating?: number;
+  };
+  hackerrank?: { username: string; badges: string[] };
+  // Academic Evidence
+  academics?: {
+    university: string;
+    degree: string;
+    semester: string;
+    cgpa: number;
+    strongSubjects: string[];
+    weakSubjects: string[];
+  };
+  // Self-Narrative
+  selfIntroduction?: {
+    rawText: string;
+    extractedInterests: string[];
+    inferredStrengths: string[];
+  };
+  // Certifications
+  certificates: Array<{
+    id: string;
+    name: string;
+    provider: 'NPTEL' | 'Coursera' | 'Udemy' | 'Google' | 'Other';
+    issueDate: string;
+    credentialUrl?: string;
+  }>;
+}
+
+export type SkillConfidence = 'Low' | 'Medium' | 'High';
+export type EffectiveTier = 'Foundation' | 'Associate' | 'Advanced';
+
+export interface WorkStyleVector {
+  collaboration: number; // 0 (Solo) to 100 (Team)
+  structure: number;     // 0 (Flexible) to 100 (Structured)
+  orientation: number;   // 0 (Deep Tech) to 100 (People Focused)
+  execution: number;     // 0 (Build) to 100 (Analyze)
+}
+
+export interface TriangulatedSkillItem {
+  name: string;
+  claimedLevel?: 'Beginner' | 'Intermediate' | 'Advanced';
+  githubEvidenceScore?: number; // 0-100
+  assessmentScore?: number;     // 0-100
+  projectEvidenceScore?: number; // 0-100
+  compositeConfidence: SkillConfidence;
+  effectiveTier: EffectiveTier;
+  growthHistory: Array<{ date: string; score: number }>;
+}
+
+export interface TriangulatedSkillProfile {
+  userId: string;
+  skills: Record<string, TriangulatedSkillItem>;
+  interestVector: Record<string, number>; // e.g. { design: 0.85, analytics: 0.60, coding: 0.40, product: 0.70 }
+  workStyle: WorkStyleVector;
+}
+
+export type CareerFamily = 'Technology' | 'Product & Business' | 'Creative' | 'Communication';
+export type MatchType = 'Strong Match' | 'Emerging Match' | 'Exploratory Match';
+
+export interface CareerMiniTrial {
+  title: string;
+  durationDays: 7;
+  tasks: Array<{ day: number; task: string; testGoal: string; completed?: boolean }>;
+}
+
+export interface CareerPossibilityMatch {
+  roleId: string;
+  title: string;
+  family: CareerFamily;
+  compatibilityScore: number; // 0-100
+  matchType: MatchType;
+  salaryRange?: string;
+  growthRate?: string;
+  whyItSuitsYou: string[];
+  whatMayChallengeYou: string[];
+  skillGaps: Array<{ skill: string; criticality: 'Blocker' | 'Priority' | 'Differentiator' }>;
+  miniTrial: CareerMiniTrial;
+}
+
+export interface CareerPossibilityMap {
+  userId: string;
+  updatedAt: string;
+  matches: CareerPossibilityMatch[];
+}
+
+export interface CareerPresenceDocument {
+  userId: string;
+  overallScore: number; // 0-100
+  breakdown: {
+    github: { score: number; checklist: { bio: boolean; readme: boolean; pinnedRepos: boolean; liveLinks: boolean } };
+    linkedIn: { score: number; checklist: { headline: boolean; about: boolean; experience: boolean; skills: boolean } };
+    resumeAts: { score: number; missingKeywords: string[]; quantifiedBullets: boolean };
+    portfolio: { score: number; responsive: boolean; caseStudies: boolean };
+    certifications: { score: number; count: number };
+  };
+}
+
+export type PacingRecommendation = 'Normal' | 'Slow Down & Break' | 'Recovery Day';
+
+export interface DailyMoodLog {
+  date: string;
+  moodEmoji: string; // e.g. "😊" | "🙂" | "😐" | "😕" | "😫"
+  vibeCard: string;  // e.g. "🌱 Growth" | "⚡ Energetic" | "🌧️ Drained" | "🌙 Resting" | "🔥 Fired Up"
+  preEnergyLevel: number;  // 1 to 5
+  postEnergyLevel?: number; // 1 to 5
+  studyDurationMinutes: number;
+}
+
+export interface WellbeingDocument {
+  userId: string;
+  currentStreak: number;
+  streakFrozen: boolean;
+  freezeTokensRemaining: number;
+  dailyLogs: DailyMoodLog[];
+  fatigueScore: number; // 0-100
+  pacingRecommendation: PacingRecommendation;
+  lastSupportiveMessage?: string;
+}
+
+export interface DeconstructedReadiness {
+  careerFitIndex: number;     // 0 - 100 based on interests + workstyle
+  skillReadiness: number;     // 0 - 100 triangulated from code, projects, tests
+  careerPresence: number;     // 0 - 100 github, linkedin, ats, portfolio
+  interviewReadiness: number; // 0 - 100 STAR mock performance
+  learningConsistency: number;// 0 - 100 weekly adherence & streak velocity
+}
+

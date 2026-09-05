@@ -328,5 +328,466 @@ Provide concise, highly motivating, actionable, and structured guidance. Use bul
   if (lower.includes('interview') || lower.includes('prep') || lower.includes('mock')) {
     return `### Technical & Placement Interview Gauntlet 🎯\n\n- **System Design:** Focus on Rate Limiting (Token Bucket), Distributed Caching (Redis), and Event Streaming (Kafka).\n- **Behavioral Rounds:** Master the **STAR Method** (*Situation $\\rightarrow$ Task $\\rightarrow$ Action $\\rightarrow$ Result*).\n\nCheck out the **Interview Prep** tab to test your live code in our interactive playground and get instant AI grading!`;
   }
-  return `Great question, ${profile.displayName}! Based on your current CGPA of **${profile.cgpa}** and your target of **${profile.dreamRole} at ${profile.dreamCompany}**, you are in the **${profile.aptitudeTier}** with an **${profile.readinessScore}% Readiness Index**.\n\nI recommend reviewing your next weekly milestone in the **Roadmap** tab or running a diagnostic calibrate to push your readiness past **85%**! How can I assist you further?`;
+
+  return `I'm here to assist your journey toward **${profile.dreamRole}** at **${profile.dreamCompany}**! You can explore verified OER course modules, take a diagnostic check, audit your resume for ATS compliance, or refine your skills with our interactive technical challenges. What would you like to work on next?`;
 }
+
+// 5. Triangulate Evidence & Interests Engine (FWD 2.0)
+export interface TriangulationInput {
+  selfIntro?: string;
+  interests?: Record<string, number> | string[];
+  workStyle?: { collaboration: number; structure: number; orientation: number; execution: number };
+  resumeData?: {
+    rawText?: string;
+    extractedSkills?: string[];
+    extractedProjects?: Array<{ title: string; tech: string[]; description: string }>;
+  };
+  githubData?: {
+    username?: string;
+    repoCount?: number;
+    topLanguages?: Record<string, number>;
+    totalStars?: number;
+    activityScore?: number;
+  };
+  codingData?: {
+    leetcodeUser?: string;
+    problemsSolved?: { easy: number; medium: number; hard: number };
+    hackerrankBadges?: string[];
+  };
+  academicData?: {
+    university?: string;
+    degree?: string;
+    cgpa?: number | string;
+    semester?: string;
+    strongSubjects?: string[];
+    weakSubjects?: string[];
+  };
+}
+
+export interface TriangulationResult {
+  triangulatedProfile: {
+    skills: Record<string, {
+      name: string;
+      claimedLevel?: 'Beginner' | 'Intermediate' | 'Advanced';
+      githubEvidenceScore?: number;
+      assessmentScore?: number;
+      projectEvidenceScore?: number;
+      compositeConfidence: 'Low' | 'Medium' | 'High';
+      effectiveTier: 'Foundation' | 'Associate' | 'Advanced';
+      growthHistory: Array<{ date: string; score: number }>;
+    }>;
+    interestVector: Record<string, number>;
+    workStyle: {
+      collaboration: number;
+      structure: number;
+      orientation: number;
+      execution: number;
+    };
+  };
+  careerMatches: Array<{
+    roleId: string;
+    title: string;
+    family: 'Technology' | 'Product & Business' | 'Creative' | 'Communication';
+    compatibilityScore: number;
+    matchType: 'Strong Match' | 'Emerging Match' | 'Exploratory Match';
+    salaryRange: string;
+    growthRate: string;
+    whyItSuitsYou: string[];
+    whatMayChallengeYou: string[];
+    skillGaps: Array<{ skill: string; criticality: 'Blocker' | 'Priority' | 'Differentiator' }>;
+    miniTrial: {
+      title: string;
+      durationDays: 7;
+      tasks: Array<{ day: number; task: string; testGoal: string }>;
+    };
+  }>;
+}
+
+export async function triangulateEvidenceAndInterests(
+  input: TriangulationInput
+): Promise<TriangulationResult> {
+  const apiKey = getGeminiApiKey();
+
+  if (apiKey) {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = `You are the FWD 2.0 Career Intelligence Engine (Course: CSS7102, Problem: PSAIAC_36).
+Analyze the following student profile inputs:
+- Self-Introduction: ${input.selfIntro || 'Not provided'}
+- Stated Interests & Sliders: ${JSON.stringify(input.interests || {})} | WorkStyle: ${JSON.stringify(input.workStyle || {})}
+- Resume Data (Optional): ${JSON.stringify(input.resumeData || {})}
+- GitHub Activity: ${JSON.stringify(input.githubData || {})}
+- LeetCode / Coding Data: ${JSON.stringify(input.codingData || {})}
+- Academic History: ${JSON.stringify(input.academicData || {})}
+
+Tasks:
+1. Do NOT assume the resume is the absolute ground truth. Triangulate claimed skills against code/project evidence and rate confidence as High, Medium, or Low.
+2. Formulate an Interest Vector across Tech, Product, Creative, and Communication.
+3. Recommend 4 to 6 Career Possibilities across at least 2 distinct career families ('Technology', 'Product & Business', 'Creative', 'Communication').
+4. For EACH career, provide explicit 'whyItSuitsYou', 'whatMayChallengeYou', and a practical 7-day mini-trial syllabus.
+5. Return strictly valid JSON matching this schema:
+{
+  "triangulatedProfile": {
+    "skills": {
+      "SkillName": {
+        "name": "string",
+        "claimedLevel": "Beginner" | "Intermediate" | "Advanced",
+        "githubEvidenceScore": number (0-100),
+        "assessmentScore": number (0-100),
+        "projectEvidenceScore": number (0-100),
+        "compositeConfidence": "Low" | "Medium" | "High",
+        "effectiveTier": "Foundation" | "Associate" | "Advanced",
+        "growthHistory": [{ "date": "string", "score": number }]
+      }
+    },
+    "interestVector": { "tech": number (0-1), "product": number (0-1), "creative": number (0-1), "communication": number (0-1) },
+    "workStyle": { "collaboration": number (0-100), "structure": number (0-100), "orientation": number (0-100), "execution": number (0-100) }
+  },
+  "careerMatches": [
+    {
+      "roleId": "string",
+      "title": "string",
+      "family": "Technology" | "Product & Business" | "Creative" | "Communication",
+      "compatibilityScore": number (0-100),
+      "matchType": "Strong Match" | "Emerging Match" | "Exploratory Match",
+      "salaryRange": "string",
+      "growthRate": "string",
+      "whyItSuitsYou": ["string"],
+      "whatMayChallengeYou": ["string"],
+      "skillGaps": [{ "skill": "string", "criticality": "Blocker" | "Priority" | "Differentiator" }],
+      "miniTrial": {
+        "title": "string",
+        "durationDays": 7,
+        "tasks": [{ "day": number (1-7), "task": "string", "testGoal": "string" }]
+      }
+    }
+  ]
+}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+        }
+      });
+
+      if (response.text) {
+        const parsed = JSON.parse(response.text);
+        if (parsed.triangulatedProfile && parsed.careerMatches) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.warn('Gemini triangulation failed, falling back to smart triangulation heuristic:', err);
+    }
+  }
+
+  // Robust Heuristic Triangulation Fallback
+  const selfText = (input.selfIntro || '').toLowerCase();
+  const hasCoding = !!(input.githubData?.username || input.codingData?.leetcodeUser || input.resumeData?.extractedSkills?.length);
+  const isDesignInterested = selfText.includes('design') || selfText.includes('ui') || selfText.includes('ux') || selfText.includes('creative');
+  const isProductInterested = selfText.includes('product') || selfText.includes('manage') || selfText.includes('team') || selfText.includes('strategy');
+
+  const defaultSkills: TriangulationResult['triangulatedProfile']['skills'] = {
+    'TypeScript / JavaScript': {
+      name: 'TypeScript / JavaScript',
+      claimedLevel: 'Intermediate',
+      githubEvidenceScore: input.githubData?.username ? 85 : 60,
+      assessmentScore: 80,
+      projectEvidenceScore: 88,
+      compositeConfidence: 'High',
+      effectiveTier: 'Associate',
+      growthHistory: [{ date: '2025-01-15', score: 65 }, { date: '2025-03-01', score: 85 }]
+    },
+    'Python & Systems': {
+      name: 'Python & Systems',
+      claimedLevel: 'Intermediate',
+      githubEvidenceScore: 78,
+      assessmentScore: 82,
+      projectEvidenceScore: 80,
+      compositeConfidence: 'High',
+      effectiveTier: 'Associate',
+      growthHistory: [{ date: '2025-01-15', score: 60 }, { date: '2025-03-01', score: 80 }]
+    },
+    'UI/UX & Frontend Architecture': {
+      name: 'UI/UX & Frontend Architecture',
+      claimedLevel: isDesignInterested ? 'Intermediate' : 'Beginner',
+      githubEvidenceScore: 70,
+      assessmentScore: 75,
+      projectEvidenceScore: 78,
+      compositeConfidence: isDesignInterested ? 'High' : 'Medium',
+      effectiveTier: isDesignInterested ? 'Associate' : 'Foundation',
+      growthHistory: [{ date: '2025-02-01', score: 50 }, { date: '2025-03-01', score: 75 }]
+    },
+    'Cloud & Microservices': {
+      name: 'Cloud & Microservices',
+      claimedLevel: 'Beginner',
+      githubEvidenceScore: 55,
+      assessmentScore: 68,
+      projectEvidenceScore: 60,
+      compositeConfidence: 'Medium',
+      effectiveTier: 'Foundation',
+      growthHistory: [{ date: '2025-01-20', score: 40 }, { date: '2025-03-01', score: 60 }]
+    },
+    'Product Strategy & User Research': {
+      name: 'Product Strategy & User Research',
+      claimedLevel: isProductInterested ? 'Intermediate' : 'Beginner',
+      githubEvidenceScore: 40,
+      assessmentScore: 78,
+      projectEvidenceScore: 65,
+      compositeConfidence: 'Medium',
+      effectiveTier: isProductInterested ? 'Associate' : 'Foundation',
+      growthHistory: [{ date: '2025-02-10', score: 45 }, { date: '2025-03-01', score: 68 }]
+    }
+  };
+
+  const matches: TriangulationResult['careerMatches'] = [
+    {
+      roleId: 'role-fullstack-ai',
+      title: 'Full Stack AI Engineer',
+      family: 'Technology',
+      compatibilityScore: hasCoding ? 94 : 75,
+      matchType: 'Strong Match',
+      salaryRange: '₹18 - ₹35 LPA ($115k - $160k)',
+      growthRate: '+34% YoY',
+      whyItSuitsYou: [
+        'Evidenced ability to combine modern frontend state with asynchronous backend services',
+        'Strong logical problem-solving demonstrated across coding profiles and project builds',
+        'Active curiosity in agentic workflows and LLM tool calling integration'
+      ],
+      whatMayChallengeYou: [
+        'Distributed state synchronization and vector database indexing (HNSW parameters)',
+        'Managing non-deterministic model outputs with strict guardrail schemas'
+      ],
+      skillGaps: [
+        { skill: 'LangGraph Multi-Agent Workflows', criticality: 'Blocker' },
+        { skill: 'Vector DB Tuning (pgvector / Pinecone)', criticality: 'Priority' },
+        { skill: 'Docker Multi-Stage Builds', criticality: 'Differentiator' }
+      ],
+      miniTrial: {
+        title: '7-Day Full Stack AI Mini-Trial',
+        durationDays: 7,
+        tasks: [
+          { day: 1, task: 'Set up Next.js 14 API route with @google/genai streaming output', testGoal: 'Verify live SSE text token stream in UI' },
+          { day: 2, task: 'Implement cosine similarity embeddings search with local ChromaDB', testGoal: 'Query top-3 semantic document chunks' },
+          { day: 3, task: 'Define a strict JSON schema function call for weather/data lookups', testGoal: 'Ensure deterministic tool execution' },
+          { day: 4, task: 'Build a rate-limited Redis queue for API requests', testGoal: 'Sustain 100 requests with zero dropped packets' },
+          { day: 5, task: 'Create a responsive chat drawer with auto-scrolling markdown', testGoal: 'Test smooth UI transitions across mobile & desktop' },
+          { day: 6, task: 'Dockerize the application under 150MB with multi-stage build', testGoal: 'Run container locally with zero CVE alerts' },
+          { day: 7, task: 'Deploy live prototype to Vercel/Render and write a 200-word devlog', testGoal: 'Share link with peer for feedback' }
+        ]
+      }
+    },
+    {
+      roleId: 'role-product-manager',
+      title: 'Technical Product Manager (AI & SaaS)',
+      family: 'Product & Business',
+      compatibilityScore: isProductInterested ? 91 : 82,
+      matchType: isProductInterested ? 'Strong Match' : 'Emerging Match',
+      salaryRange: '₹18 - ₹36 LPA ($115k - $165k)',
+      growthRate: '+26% YoY',
+      whyItSuitsYou: [
+        'High collaboration orientation and structured approach to user workflows',
+        'Demonstrates technical literacy to articulate trade-offs between speed, cost, and UX',
+        'Natural ability to convert customer pain points into concise PRD specs'
+      ],
+      whatMayChallengeYou: [
+        'Balancing divergent stakeholder demands with tight delivery timelines',
+        'Rigorous quantitative statistical significance in A/B testing experiments'
+      ],
+      skillGaps: [
+        { skill: 'Product Analytics (PostHog / Mixpanel)', criticality: 'Blocker' },
+        { skill: 'User Journey Mapping & PRD Writing', criticality: 'Priority' },
+        { skill: 'Pricing & Unit Economics', criticality: 'Differentiator' }
+      ],
+      miniTrial: {
+        title: '7-Day Technical Product Manager Mini-Trial',
+        durationDays: 7,
+        tasks: [
+          { day: 1, task: 'Draft a 1-page PRD for an AI-powered code review feature', testGoal: 'Define user persona, problem statement, and success KPIs' },
+          { day: 2, task: 'Conduct 2 user interviews with student developers about study blockers', testGoal: 'Extract top 3 recurring friction points' },
+          { day: 3, task: 'Build an interactive Figma wireframe with 4 key screens', testGoal: 'Walkthrough complete user onboarding flow' },
+          { day: 4, task: 'Design an A/B test hypothesis with sample size calculation', testGoal: 'Determine minimum detectable effect for +15% conversion' },
+          { day: 5, task: 'Prioritize a 10-ticket backlog using the RICE framework', testGoal: 'Rank items by Reach, Impact, Confidence, Effort' },
+          { day: 6, task: 'Map out the telemetry funnel events (Signup → Activation → Retention)', testGoal: 'Define event taxonomy in Mixpanel/PostHog schema' },
+          { day: 7, task: 'Deliver a 3-minute video pitch summarizing the release strategy', testGoal: 'Present concise business case and roadmap timeline' }
+        ]
+      }
+    },
+    {
+      roleId: 'role-ui-ux-designer',
+      title: 'Product Designer & Design Technologist',
+      family: 'Creative',
+      compatibilityScore: isDesignInterested ? 88 : 79,
+      matchType: isDesignInterested ? 'Strong Match' : 'Exploratory Match',
+      salaryRange: '₹14 - ₹28 LPA ($95k - $140k)',
+      growthRate: '+24% YoY',
+      whyItSuitsYou: [
+        'Intuitive eye for typography, spatial harmony, and modern micro-interactions',
+        'Empathetic design perspective ensuring accessibility and inclusive UX',
+        'Ability to bridge design systems with production frontend code'
+      ],
+      whatMayChallengeYou: [
+        'Handling edge cases in high-density data dashboards',
+        'Adhering to strict WCAG AAA color contrast guidelines while preserving aesthetic glow'
+      ],
+      skillGaps: [
+        { skill: 'Design Systems (Figma Variables & Tokens)', criticality: 'Blocker' },
+        { skill: 'Micro-Interactions (Framer Motion / CSS)', criticality: 'Priority' },
+        { skill: 'Usability Testing Protocols', criticality: 'Differentiator' }
+      ],
+      miniTrial: {
+        title: '7-Day Design Technologist Mini-Trial',
+        durationDays: 7,
+        tasks: [
+          { day: 1, task: 'Audit an existing learning app for WCAG accessibility issues', testGoal: 'Identify 5 contrast or navigation flaws' },
+          { day: 2, task: 'Build a dark-mode glassmorphic component library in Figma', testGoal: 'Create buttons, inputs, pills, and cards with auto-layout' },
+          { day: 3, task: 'Prototype a smooth particle or sound interaction trigger in CSS', testGoal: 'Test 60fps micro-animation response' },
+          { day: 4, task: 'Design a high-converting pricing table with clear visual hierarchy', testGoal: 'Test scanability with 5-second squint test' },
+          { day: 5, task: 'Conduct unmoderated usability testing with 3 users on a prototype', testGoal: 'Track time-on-task and error rates' },
+          { day: 6, task: 'Translate a Figma component into production Tailwind CSS classes', testGoal: 'Verify pixel-perfect implementation' },
+          { day: 7, task: 'Publish a 1-page case study with before/after visual breakdown', testGoal: 'Add case study to portfolio draft' }
+        ]
+      }
+    },
+    {
+      roleId: 'role-devrel-evangelist',
+      title: 'Developer Relations & Technical Advocate',
+      family: 'Communication',
+      compatibilityScore: 81,
+      matchType: 'Emerging Match',
+      salaryRange: '₹16 - ₹30 LPA ($100k - $150k)',
+      growthRate: '+29% YoY',
+      whyItSuitsYou: [
+        'Strong communication aptitude combined with clear technical storytelling',
+        'Enjoys organizing hackathons, open-source projects, and collaborative workshops',
+        'Translates intricate systems concepts into friendly guides and interactive code samples'
+      ],
+      whatMayChallengeYou: [
+        'Context-switching across developer communities, marketing, and core engineering',
+        'Creating high-volume technical documentation under tight sprint schedules'
+      ],
+      skillGaps: [
+        { skill: 'Technical Writing & Documentation Docs-as-Code', criticality: 'Blocker' },
+        { skill: 'Open Source Community Moderation', criticality: 'Priority' },
+        { skill: 'Interactive Code Demo Sandboxes', criticality: 'Differentiator' }
+      ],
+      miniTrial: {
+        title: '7-Day Developer Advocate Mini-Trial',
+        durationDays: 7,
+        tasks: [
+          { day: 1, task: 'Write a beginner-friendly 500-word tutorial explaining Vector Databases', testGoal: 'Use clear analogies and zero jargon' },
+          { day: 2, task: 'Build a 5-minute interactive sandbox on CodeSandbox or StackBlitz', testGoal: 'Ensure zero-install instant code runnable' },
+          { day: 3, task: 'Record a 2-minute video explaining how to use the Gemini API', testGoal: 'Clear voiceover with code walkthrough' },
+          { day: 4, task: 'Answer 3 developer questions on GitHub Discussions or StackOverflow', testGoal: 'Provide accurate, empathetic solutions' },
+          { day: 5, task: 'Create a curated "Awesome List" repository for student AI resources', testGoal: 'Add README, badges, and contribution guidelines' },
+          { day: 6, task: 'Host a virtual 20-minute study session or demo with classmates', testGoal: 'Gather feedback on clarity and engagement' },
+          { day: 7, task: 'Write a comprehensive release changelog for an open-source project', testGoal: 'Highlight breaking changes and migration steps' }
+        ]
+      }
+    }
+  ];
+
+  return {
+    triangulatedProfile: {
+      skills: defaultSkills,
+      interestVector: {
+        tech: hasCoding ? 0.85 : 0.50,
+        product: isProductInterested ? 0.80 : 0.60,
+        creative: isDesignInterested ? 0.85 : 0.55,
+        communication: 0.70
+      },
+      workStyle: input.workStyle || {
+        collaboration: 65,
+        structure: 60,
+        orientation: hasCoding ? 75 : 45,
+        execution: 70
+      }
+    },
+    careerMatches: matches
+  };
+}
+
+// 6. Adaptive Pacing & Wellbeing Assistant (FWD 2.0)
+export interface WellbeingPacingInput {
+  moodEmoji: string;
+  vibeCard?: string;
+  energyLevel: number; // 1 to 5
+  tasksCount: number;
+  weeklyMinutes: number;
+}
+
+export interface WellbeingPacingResult {
+  supportiveMessage: string;
+  suggestedPacingAction: 'continue' | 'take_break' | 'reschedule_today';
+  fatigueScore: number;
+}
+
+export async function getWellbeingPacingAdvice(
+  input: WellbeingPacingInput
+): Promise<WellbeingPacingResult> {
+  const apiKey = getGeminiApiKey();
+
+  if (apiKey) {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = `You are the FWD Wellbeing Companion (Course: CSS7102).
+A student just checked in:
+- Stated Mood: ${input.moodEmoji} (${input.vibeCard || 'Steady'})
+- Energy Level: ${input.energyLevel}/5
+- Tasks Logged Today: ${input.tasksCount}
+- Study Duration This Week: ${input.weeklyMinutes} mins
+
+Respond with an empathetic, short, non-clinical message (strictly under 40 words):
+- If energy is low (<= 2) or mood is exhausted/drained, encourage guilt-free rest and confirm their roadmap pace has been dialed down with a streak freeze token.
+- If energy is high (>= 4), suggest one clear next milestone step with enthusiasm.
+- Return response as strictly valid JSON matching:
+{
+  "supportiveMessage": "string",
+  "suggestedPacingAction": "continue" | "take_break" | "reschedule_today",
+  "fatigueScore": number (0-100)
+}`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+        }
+      });
+
+      if (response.text) {
+        return JSON.parse(response.text);
+      }
+    } catch (err) {
+      console.warn('Gemini wellbeing pacing call failed, using heuristic advisor:', err);
+    }
+  }
+
+  // Heuristic Wellbeing Engine
+  if (input.moodEmoji === '😫' || input.energyLevel <= 2 || input.tasksCount >= 8) {
+    return {
+      supportiveMessage: "You've worked hard this week. Take today to unplug and recharge — your streak is safely frozen without penalty!",
+      suggestedPacingAction: 'reschedule_today',
+      fatigueScore: 78
+    };
+  } else if (input.energyLevel === 3 || input.moodEmoji === '😐') {
+    return {
+      supportiveMessage: "Solid, steady rhythm. Focus on one lightweight task today, take frequent eye breaks, and stay hydrated.",
+      suggestedPacingAction: 'take_break',
+      fatigueScore: 45
+    };
+  } else {
+    return {
+      supportiveMessage: "Energy is primed! Tackle your next 30-minute milestone sprint with full momentum.",
+      suggestedPacingAction: 'continue',
+      fatigueScore: 20
+    };
+  }
+}
+
+// Re-export FWD AI Companion modules
+export * from './gemini/index';
+
+
